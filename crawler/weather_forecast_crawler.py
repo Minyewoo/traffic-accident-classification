@@ -24,14 +24,3 @@ class WeatherForecastCrawler(SeleniumCrawler):
         forecast['datetime'] = datetime.now(tz=timezone).isoformat()
 
         return forecast
-
-
-# config = dotenv_values('.env')
-# with open('forecast_field_selectors.json', 'r') as file:
-#     weather_forecast = WeatherForecastCrawler(
-#         config['DRIVER_PATH'], json.load(file)
-#     )
-# weather_forecast.go_to(config['WFORECAST_URL'])
-# print(weather_forecast.get_forecast())
-
-# weather_forecast.finish()
