@@ -2,9 +2,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from selenium_crawler import SeleniumCrawler
 from selenium.webdriver.common.by import By
-from dotenv import dotenv_values
 import time
-import json
 
 
 class WeatherForecastCrawler(SeleniumCrawler):

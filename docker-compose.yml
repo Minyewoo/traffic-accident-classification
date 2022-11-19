@@ -1,0 +1,42 @@
+version: "3.9"
+services:
+  rabbitmq:
+    hostname: rabbitmq
+    image: rabbitmq:3.9.25-management-alpine
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+      - rabbitmq_net
+  
+  redis:
+    hostname: redis
+    image: nyaaneet/rejson:v2.4.0
+    ports:
+      - 6379:6379
+    networks:
+      - redis_net
+  
+  crawler:
+    env_file:
+      - ./crawler/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - RABBITMQ_HOST=rabbitmq
+    build:
+      context: ./crawler/
+      dockerfile: Dockerfile
+    networks:
+      - redis_net
+      - rabbitmq_net
+
+networks:
+  redis_net:
+    driver: bridge
+
+  rabbitmq_net:
+    driver: bridge

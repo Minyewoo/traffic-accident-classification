@@ -56,7 +56,7 @@ def crawling_job():
 
 
 if __name__ == '__main__':
-    schedule.every().hour.do(crawling_job)
+    schedule.every(15).minutes.do(crawling_job)
 
     while 1:
         n = schedule.idle_seconds()
