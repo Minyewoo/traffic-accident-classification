@@ -12,9 +12,9 @@ class TrafficCrawler(SeleniumCrawler):
 
         predecoded_data = decode(response.body, response.headers.get(
             'Content-Encoding', 'identity'))
-        entries = json.loads(predecoded_data.decode("utf8"))['data']
+        entries = json.loads(predecoded_data.decode("utf8"))
 
         events = list(
             filter(lambda entry: entry['type'] == event_type, entries))
 
-        return {'events': events}
+        return events

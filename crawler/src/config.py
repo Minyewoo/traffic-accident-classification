@@ -1,11 +1,9 @@
-from dotenv import load_dotenv
 from os import getenv, path
 
 
 class Config:
     def __init__(self) -> None:
-        load_dotenv()
-
+        self.crawler_type = getenv('CRAWLER_TYPE', 'traffic_events')
         self.driver_path = getenv('DRIVER_PATH', path.join('.', 'gecko'))
         self.traffic_url = getenv('TRAFFIC_URL', 'https://example.com')
         self.traffic_api_route = getenv('TRAFFIC_API_ROUTE', 'api')
@@ -27,3 +25,5 @@ class Config:
         self.redis_port = getenv('REDIS_PORT', '6379')
 
         self.rabbitmq_host = getenv('RABBITMQ_HOST', 'localhost')
+        self.scheduler_exchange_name = getenv(
+            'SCHEDULER_EXCHANGE_NAME', 'crawling_schedule')

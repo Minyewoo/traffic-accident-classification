@@ -7,10 +7,15 @@ services:
       - 5672:5672
       - 15672:15672
     volumes:
-      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
-      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+      - ./data/rabbitmq/:/var/lib/rabbitmq/
     networks:
       - rabbitmq_net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 300s
+      timeout: 30s
+      retries: 5
+    
   
   redis:
     hostname: redis
@@ -19,19 +24,62 @@ services:
       - 6379:6379
     networks:
       - redis_net
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 300s
+      timeout: 30s
+      retries: 5
   
-  crawler:
+  traffic_events_crawler:
     env_file:
       - ./crawler/.env
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - RABBITMQ_HOST=rabbitmq
+      - CRAWLER_TYPE=traffic_events
     build:
       context: ./crawler/
       dockerfile: Dockerfile
+    restart: on-failure
+    depends_on:
+      - rabbitmq
+      - redis
     networks:
       - redis_net
+      - rabbitmq_net
+
+  weather_forecast_crawler:
+    env_file:
+      - ./crawler/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - RABBITMQ_HOST=rabbitmq
+      - CRAWLER_TYPE=weather_forecast
+    build:
+      context: ./crawler/
+      dockerfile: Dockerfile
+    restart: on-failure
+    depends_on:
+      - rabbitmq
+      - redis
+    networks:
+      - redis_net
+      - rabbitmq_net
+
+  scheduler:
+    env_file:
+      - ./scheduler/.env
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    build:
+      context: ./scheduler/
+      dockerfile: Dockerfile
+    restart: on-failure
+    depends_on:
+      - rabbitmq
+    networks:
       - rabbitmq_net
 
 networks:
