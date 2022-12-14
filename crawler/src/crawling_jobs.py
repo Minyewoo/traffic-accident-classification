@@ -13,7 +13,10 @@ def crawl_traffic_events():
     events = traffic.find_events(config.traffic_api_route, 'crash')
     traffic.finish()
 
-    return events
+    return {
+        'city_name': config.city_name,
+        'events': events,
+    }
 
 
 def crawl_weather_forecast():
@@ -26,5 +29,7 @@ def crawl_weather_forecast():
     forecast_crawler.go_to(config.wforecast_url)
     forecast = forecast_crawler.get_forecast()
     forecast_crawler.finish()
+
+    forecast['city_name'] = config.city_name
 
     return forecast

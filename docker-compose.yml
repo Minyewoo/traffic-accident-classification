@@ -29,8 +29,8 @@ services:
       interval: 300s
       timeout: 30s
       retries: 5
-  
-  traffic_events_crawler:
+
+  traffic_events_crawler_msc:
     env_file:
       - ./crawler/.env
     environment:
@@ -38,6 +38,8 @@ services:
       - REDIS_PORT=6379
       - RABBITMQ_HOST=rabbitmq
       - CRAWLER_TYPE=traffic_events
+      - TRAFFIC_URL=https://2gis.ru/moscow?m=37.62017%2C55.755012%2F12&traffic
+      - CITY_NAME=msc
     build:
       context: ./crawler/
       dockerfile: Dockerfile
@@ -49,7 +51,7 @@ services:
       - redis_net
       - rabbitmq_net
 
-  weather_forecast_crawler:
+  weather_forecast_crawler_msc:
     env_file:
       - ./crawler/.env
     environment:
@@ -57,6 +59,50 @@ services:
       - REDIS_PORT=6379
       - RABBITMQ_HOST=rabbitmq
       - CRAWLER_TYPE=weather_forecast
+      - WFORECAST_URL=https://yandex.ru/pogoda/moscow
+      - CITY_NAME=msc
+    build:
+      context: ./crawler/
+      dockerfile: Dockerfile
+    restart: on-failure
+    depends_on:
+      - rabbitmq
+      - redis
+    networks:
+      - redis_net
+      - rabbitmq_net
+
+  traffic_events_crawler_spb:
+    env_file:
+      - ./crawler/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - RABBITMQ_HOST=rabbitmq
+      - CRAWLER_TYPE=traffic_events
+      - TRAFFIC_URL=https://2gis.ru/spb?m=30.40821%2C59.953673%2F10.94&traffic
+      - CITY_NAME=spb
+    build:
+      context: ./crawler/
+      dockerfile: Dockerfile
+    restart: on-failure
+    depends_on:
+      - rabbitmq
+      - redis
+    networks:
+      - redis_net
+      - rabbitmq_net
+
+  weather_forecast_crawler_spb:
+    env_file:
+      - ./crawler/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - RABBITMQ_HOST=rabbitmq
+      - CRAWLER_TYPE=weather_forecast
+      - WFORECAST_URL=https://yandex.ru/pogoda/saint-petersburg
+      - CITY_NAME=spb
     build:
       context: ./crawler/
       dockerfile: Dockerfile
