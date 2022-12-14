@@ -1,5 +1,27 @@
 version: "3.9"
 services:
+  spark:
+    hostname: spark
+    image: bitnami/spark:3.3.1
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_URL=spark://spark:7077
+    ports:
+      - 8088:8080
+    networks:
+      - spark_net
+
+  spark-worker:
+    image: bitnami/spark:3.3.1
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=5
+    networks:
+      - spark_net
+      - hdfs
+
   rabbitmq:
     hostname: rabbitmq
     image: rabbitmq:3.9.25-management-alpine
@@ -16,7 +38,6 @@ services:
       timeout: 30s
       retries: 5
     
-  
   redis:
     hostname: redis
     image: nyaaneet/rejson:v2.4.0
@@ -29,6 +50,32 @@ services:
       interval: 300s
       timeout: 30s
       retries: 5
+
+  hdfs-namenode:
+    image: gradiant/hdfs:3.2.2
+    volumes:
+      - ./data/hadoop_namenode:/hadoop/dfs/name
+    environment:
+      - HDFS_CONF_dfs_permissions_enabled=false
+    command:
+      - namenode
+    ports:
+      - 8020:8020
+      - 9870:9870
+    networks:
+      - hdfs
+
+  hdfs-datanode:
+    image: gradiant/hdfs:3.2.2
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://hdfs-namenode:8020
+      - HDFS_CONF_dfs_permissions_enabled=false
+    volumes:
+      - ./data/hadoop_datanode:/hadoop/dfs/data
+    command:
+      - datanode
+    networks:
+      - hdfs
   
   traffic_events_crawler:
     env_file:
@@ -73,6 +120,8 @@ services:
       - ./scheduler/.env
     environment:
       - RABBITMQ_HOST=rabbitmq
+    volumes:
+      - ./scheduler/src:/app:ro
     build:
       context: ./scheduler/
       dockerfile: Dockerfile
@@ -82,9 +131,37 @@ services:
     networks:
       - rabbitmq_net
 
+  data-preprocessor:
+    build:
+      context: ./data-preprocessor/
+      dockerfile: Dockerfile
+    environment:
+      - PROCESSING_SCHEDULER_EXCHANGE_NAME=${PROCESSING_SCHEDULER_EXCHANGE_NAME}
+      - SPARK_SUBNET=${SPARK_SUBNET}
+      - HDFS_URL=hdfs://hdfs-namenode:8020
+      - DATA_SAVING_PATH=processed/data.csv
+    volumes:
+      - ./data-preprocessor/src:/app:ro
+    restart: on-failure
+    networks:
+      - spark_net
+      - rabbitmq_net
+      - redis_net
+      - hdfs
+
 networks:
+  spark_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${SPARK_SUBNET}
+          gateway: ${SPARK_GATEAWAY}
+  
   redis_net:
     driver: bridge
 
   rabbitmq_net:
+    driver: bridge
+
+  hdfs:
     driver: bridge
