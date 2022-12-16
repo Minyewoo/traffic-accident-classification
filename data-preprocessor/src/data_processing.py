@@ -4,18 +4,18 @@ from pyspark.sql import functions as F
 from pyspark.sql.types import *
 from data_etl_utils import save_data_locally, load_local_data
 
-TRAFFIC_EVENTS_TARGET_COLUMNS = ['feedbacks', 'id', 'location', 'project', 'timestamp']
+TRAFFIC_EVENTS_TARGET_COLUMNS = ['feedbacks', 'id', 'location', 'timestamp', 'city_name']
 TRAFFIC_EVENTS_DF_SCHEMA = schema = StructType([
     StructField('id', StringType(), True),
-    StructField('city', StringType(), True),
     StructField('latitude', DoubleType(), True),
     StructField('longitude', DoubleType(), True),
     StructField('dislikes', LongType(), True),
     StructField('likes', LongType(), True),
     StructField('date', TimestampType(), True),
+    StructField('city_name', StringType(), True),
 ])
 WHEATER_FORECAST_CACHE_PATH = '/tmp/weather_forecast.csv'
-WHEATER_FORECAST_TARGET_COLUMNS = ['datetime', 'humidity', 'pressure', 'temperature', 'weather_type', 'wind_direction', 'wind_speed']
+WHEATER_FORECAST_TARGET_COLUMNS = ['datetime', 'humidity', 'pressure', 'temperature', 'weather_type', 'wind_direction', 'wind_speed', 'city_name']
 WHEATER_FORECAST_DF_SCHEMA = schema = StructType([
     StructField('humidity', FloatType(), True),
     StructField('pressure', IntegerType(), True),
@@ -24,6 +24,7 @@ WHEATER_FORECAST_DF_SCHEMA = schema = StructType([
     StructField('wind_direction', StringType(), True),
     StructField('wind_speed', FloatType(), True),
     StructField('date', TimestampType(), True),
+    StructField('city_name', StringType(), True),
 ])
 
 def convert_to_df(data, spark_session):
@@ -50,8 +51,7 @@ def process_traffic_events(data, spark_session):
             .withColumn('likes', F.col('feedbacks.likes')) \
             .drop('feedbacks') \
             .withColumn('date', F.col('timestamp').cast('timestamp')) \
-            .drop('timestamp') \
-            .withColumnRenamed('project', 'city')
+            .drop('timestamp')
 
     return data_df
 
@@ -92,14 +92,14 @@ def process_weather_forecast(data, spark_session):
     return data_df
 
 def join_traffic_and_wheater_data(traffic_events_df, weather_forecast_df):
-    time_interval_in_seconds = 1800
+    time_interval_in_seconds = 900 # 15 minutes
     to_time_intervals = lambda col: (col.cast('long') / time_interval_in_seconds).cast('int')
     
     get_most_frequent_value = F.udf(lambda arr: max(set(arr), key = arr.count), 'string')
 
     weather_forecast_df = weather_forecast_df \
             .withColumn('time_interval', to_time_intervals(F.col('date'))) \
-            .groupby('time_interval') \
+            .groupby('time_interval', 'city_name') \
             .agg(
                 F.avg(F.col('humidity')).alias('humidity'), \
                 F.avg(F.col('pressure')).alias('pressure'), \
@@ -110,7 +110,11 @@ def join_traffic_and_wheater_data(traffic_events_df, weather_forecast_df):
             )
 
     joined_df = traffic_events_df \
-            .join(weather_forecast_df, to_time_intervals(traffic_events_df.date) == weather_forecast_df.time_interval) \
-            .drop(weather_forecast_df.time_interval)
+            .join(weather_forecast_df, [
+                to_time_intervals(traffic_events_df.date) == weather_forecast_df.time_interval,
+                traffic_events_df.city_name == weather_forecast_df.city_name,
+            ]) \
+            .drop(weather_forecast_df.time_interval) \
+            .drop(weather_forecast_df.city_name)
 
     return joined_df
