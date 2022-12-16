@@ -120,8 +120,6 @@ services:
       - ./scheduler/.env
     environment:
       - RABBITMQ_HOST=rabbitmq
-    volumes:
-      - ./scheduler/src:/app:ro
     build:
       context: ./scheduler/
       dockerfile: Dockerfile
@@ -139,9 +137,8 @@ services:
       - PROCESSING_SCHEDULER_EXCHANGE_NAME=${PROCESSING_SCHEDULER_EXCHANGE_NAME}
       - SPARK_SUBNET=${SPARK_SUBNET}
       - HDFS_URL=hdfs://hdfs-namenode:8020
+      - HDFS_BLOCK_SIZE=${HDFS_BLOCK_SIZE}
       - DATA_SAVING_PATH=processed/data.csv
-    volumes:
-      - ./data-preprocessor/src:/app:ro
     restart: on-failure
     networks:
       - spark_net

@@ -7,9 +7,16 @@ import redis
 import pika
 from pyspark.sql import SparkSession
 from config import Config
-from data_extracting_utils import get_rabbit_queue_messages, get_redis_records
-from data_processing import process_traffic_events, process_weather_forecast, join_traffic_and_wheater_data
-
+from data_etl_utils import (
+    get_rabbit_queue_messages,
+    get_redis_records,
+    save_data_to_hdfs,
+)
+from data_processing import (
+    process_traffic_events,
+    process_weather_forecast,
+    join_traffic_and_wheater_data,
+)
 
 config = Config()
 
@@ -35,6 +42,8 @@ spark_conf.setAll(
         ('spark.app.name', 'data-preprocessor'),
         ('spark.submit.deployMode', 'client'),
         ('spark.driver.host', config.spark_driver_host),
+        ('dfs.block.size', config.hdfs_block_size),
+        ('spark.sql.sources.partitionOverwriteMode', 'dynamic'),
     ]
 )
 spark_session = SparkSession.builder \
@@ -56,12 +65,12 @@ def extract_crawled_data(pika_connection, redis_data_client, redis_cache_client)
     if msgs is not None:
         get_redis_records(
             client=redis_data_client,
-            records_ids=crawled_data_redis_ids['weather_forecast'],
+            records_ids=crawled_data_redis_ids.setdefault('weather_forecast', []),
             record_processor=lambda r: weather_forecast_accumulator(r, weather_forecast_crawled_data)
         )
         get_redis_records(
             client=redis_data_client,
-            records_ids=crawled_data_redis_ids['traffic_events'],
+            records_ids=crawled_data_redis_ids.setdefault('traffic_events', []),
             record_processor=lambda r: traffic_events_accumulator(r, traffic_events_crawled_data, redis_cache_client)
         )
 
@@ -112,13 +121,6 @@ def process_crawled_data(data, spark_session):
     
     return processed_data
 
-def save_crawled_data(data):
-    data.write.csv(
-        f'{config.hdfs_url}/{config.data_saving_path}',
-        mode='append',
-        header=True,
-    )
-
 def data_processing_callback(ch, method, properties, body):
     crawled_data = extract_crawled_data(
         pika_connection=pika_connection,
@@ -128,7 +130,11 @@ def data_processing_callback(ch, method, properties, body):
     
     processed_data = process_crawled_data(data=crawled_data, spark_session=spark_session)
 
-    save_crawled_data(processed_data)
+    save_data_to_hdfs(
+        data=processed_data,
+        hdfs_url=config.hdfs_url,
+        path=config.data_saving_path,
+    )
 
     logging.critical(f'Processed: {body}')
 

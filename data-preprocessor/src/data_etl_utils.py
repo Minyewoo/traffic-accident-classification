@@ -1,3 +1,6 @@
+import pandas as pd
+
+
 def get_rabbit_queue_messages(connection, queue_name, message_processor=None):
     messages = []
     
@@ -34,3 +37,26 @@ def get_redis_records(client, records_ids, record_processor=None):
         records.append(record)
 
     return records
+
+def save_data_to_hdfs(data, hdfs_url, path, mode='append', header=True):
+    data.write.csv(
+        f'{hdfs_url}/{path}',
+        mode=mode,
+        header=header,
+    )
+
+def load_data_from_hdfs(spark_session, hdfs_url, path, header=True):
+    data = spark_session.read.csv(
+        f'{hdfs_url}/{path}',
+        header=header,
+    )
+
+    return data
+
+def save_data_locally(data, path):
+    data.toPandas().to_csv(path, index=False)
+
+def load_local_data(spark_session, path):
+    data = pd.read_csv(path)
+
+    return spark_session.createDataFrame(data)
