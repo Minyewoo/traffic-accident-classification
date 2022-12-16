@@ -18,6 +18,7 @@ from data_processing import (
     join_traffic_and_wheater_data,
 )
 
+
 config = Config()
 
 pika_parameters = pika.ConnectionParameters(host=config.rabbitmq_host)
@@ -94,10 +95,12 @@ def weather_forecast_accumulator(record, out_list):
     return record
 
 def traffic_events_accumulator(record, out_list, redis_client):
-    events = record['data']
+    events = record['data']['events']
+    city_name = record['data']['city_name']
 
     for event in events:
         if redis_client.get(event['id']) is None:
+            event['city_name'] = city_name
             out_list.append(event)
             redis_client.set(event['id'], 'passed')
 
@@ -118,7 +121,7 @@ def process_crawled_data(data, spark_session):
         traffic_events_df=traffic_events_df,
         weather_forecast_df=weather_forecast_df
     )
-    
+
     return processed_data
 
 def data_processing_callback(ch, method, properties, body):
