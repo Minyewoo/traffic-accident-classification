@@ -36,20 +36,23 @@ redis_traffic_events_cache_client = redis.Redis(
     db=1,
 )
 
-spark_conf = pyspark.SparkConf()
-spark_conf.setAll(
-    [
-        ('spark.master', config.spark_master_url),
-        ('spark.app.name', 'data-preprocessor'),
-        ('spark.submit.deployMode', 'client'),
-        ('spark.driver.host', config.spark_driver_host),
-        ('dfs.block.size', config.hdfs_block_size),
-        ('spark.sql.sources.partitionOverwriteMode', 'dynamic'),
-    ]
-)
-spark_session = SparkSession.builder \
-        .config(conf=spark_conf) \
-        .getOrCreate()
+def start_spark_session(app_name):
+    spark_conf = pyspark.SparkConf()
+    spark_conf.setAll(
+        [
+            ('spark.master', config.spark_master_url),
+            ('spark.app.name', app_name),
+            ('spark.submit.deployMode', 'client'),
+            ('spark.driver.host', config.spark_driver_host),
+            ('dfs.block.size', config.hdfs_block_size),
+            ('spark.sql.sources.partitionOverwriteMode', 'dynamic'),
+        ]
+    )
+    spark_session = SparkSession.builder \
+            .config(conf=spark_conf) \
+            .getOrCreate()
+    
+    return spark_session
 
 
 def extract_crawled_data(pika_connection, redis_data_client, redis_cache_client):
@@ -125,6 +128,8 @@ def process_crawled_data(data, spark_session):
     return processed_data
 
 def data_processing_callback(ch, method, properties, body):
+    spark_session = start_spark_session(body)
+
     crawled_data = extract_crawled_data(
         pika_connection=pika_connection,
         redis_data_client=redis_crawled_data_client,
@@ -139,6 +144,8 @@ def data_processing_callback(ch, method, properties, body):
         path=config.data_saving_path,
     )
 
+    spark_session.stop()
+    
     logging.critical(f'Processed: {body}')
 
 
