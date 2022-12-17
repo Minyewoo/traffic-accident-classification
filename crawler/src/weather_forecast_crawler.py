@@ -14,9 +14,13 @@ class WeatherForecastCrawler(SeleniumCrawler):
         time.sleep(5)
         forecast = {}
 
-        for field_name, selector in self.field_selector_mapping.items():
-            content = self.driver.find_element(By.CSS_SELECTOR, selector)
-            forecast[field_name] = content.text
+        for field_name, params in self.field_selector_mapping.items():
+            try:
+                content = self.driver.find_element(
+                    By.CSS_SELECTOR, params['selector'])
+                forecast[field_name] = content.text
+            except:
+                forecast[field_name] = params['default']
 
         timezone = ZoneInfo('Europe/Moscow')
         forecast['datetime'] = datetime.now(tz=timezone).isoformat()
