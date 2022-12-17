@@ -15,7 +15,8 @@ class Config:
         )
 
         self.hdfs_url = getenv('HDFS_URL', 'hdfs://hdfs-namenode:8020')
-        self.data_saving_path = getenv('DATA_SAVING_PATH', 'processed/data.csv')
+        self.traffic_data_saving_path = getenv('TRAFFIC_DATA_SAVING_PATH', 'processed/data-traffic.csv')
+        self.traffic_count_data_saving_path = getenv('TRAFFIC_COUNT_DATA_SAVING_PATH', 'processed/data-traffic-count.csv')
         self.hdfs_block_size = getenv('HDFS_BLOCK_SIZE', '1048576')
 
         self.spark_master_url = getenv('SPARK_MASTER_URL', 'spark://spark:7077')
