@@ -8,5 +8,8 @@ class SchedulerConfig:
             'CRAWLING_SCHEDULER_EXCHANGE_NAME', 'crawling_schedule')
         self.processing_scheduler_exchange_name = getenv(
             'PROCESSING_SCHEDULER_EXCHANGE_NAME', 'processing_schedule')
+        self.training_scheduler_exchange_name = getenv(
+            'TRAINING_SCHEDULER_EXCHANGE_NAME', 'training_schedule')
         self.crawling_await_seconds = getenv('CRAWLING_AWAIT_SECONDS', '900')
         self.processing_await_seconds = getenv('PROCESSING_AWAIT_SECONDS', '3600')
+        self.training_await_seconds = getenv('TRAINING_AWAIT_SECONDS', '3600')

@@ -16,8 +16,8 @@ services:
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark:7077
-      - SPARK_WORKER_MEMORY=2G
-      - SPARK_WORKER_CORES=4
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=2
     networks:
       - spark_net
       - hdfs
@@ -202,11 +202,12 @@ services:
     volumes:
       - ./model/src:/app:ro
     environment:
+      - TRAINING_SCHEDULER_EXCHANGE_NAME=training_schedule
       - SPARK_SUBNET=${SPARK_SUBNET}
       - HDFS_URL=hdfs://hdfs-namenode:8020
       - HDFS_BLOCK_SIZE=${HDFS_BLOCK_SIZE}
-      - TRAFFIC_DATA_SAVING_PATH=processed/data-traffic.csv
       - TRAFFIC_COUNT_DATA_SAVING_PATH=processed/data-traffic-count.csv
+      - TRAFFIC_BEST_MODEL_SAVING_PATH=weights/best_weights
     restart: on-failure
     networks:
       - spark_net
