@@ -1,0 +1,66 @@
+/*
+This .scss file will provide a full list of helper classes for margins and paddings.
+
+The property applies the type of spacing:
+
+m - applies margin
+p - applies padding
+The direction designates the side the property applies to:
+
+t - applies the spacing for margin-top and padding-top
+b - applies the spacing for margin-bottom and padding-bottom
+l - applies the spacing for margin-left and padding-left
+r - applies the spacing for margin-right and padding-right
+s - applies the spacing for margin-left/padding-left (in LTR mode) and margin-right/padding-right (in RTL mode)
+e - applies the spacing for margin-right/padding-right (in LTR mode) and margin-left/padding-left (in RTL mode)
+x - applies the spacing for both *-left and *-right
+y - applies the spacing for both *-top and *-bottom
+a - applies the spacing for the property in all directions
+The size controls the increment of the property in 4px intervals:
+
+0 - eliminates all margin or padding by setting it to 0
+1 - sets margin or padding to 4px
+...
+16 - sets margin or padding to 64px
+*/
+
+// TODO: add media breakpoints
+
+$max-space: 16;
+$base-space: 4;
+
+$sides: (
+    'l': 'left',
+    'r': 'right',
+    't': 'top',
+    'b': 'bottom',
+    'x': (
+        'left',
+        'right',
+    ),
+    'y': (
+        'top',
+        'bottom',
+    ),
+    '': (
+        'left',
+        'right',
+        'top',
+        'bottom',
+    ),
+);
+
+@for $space from 0 to $max-space + 1 {
+    @each $prefix, $positions in $sides {
+        .m#{$prefix}-#{$space} {
+            @each $pos in $positions {
+                margin-#{$pos}: #{$space * $base-space}px;
+            }
+        }
+        .p#{$prefix}-#{$space} {
+            @each $pos in $positions {
+                padding-#{$pos}: #{$space * $base-space}px;
+            }
+        }
+    }
+}

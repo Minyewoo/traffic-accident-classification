@@ -7,7 +7,7 @@ services:
       - SPARK_MODE=master
       - SPARK_MASTER_URL=spark://spark:7077
     ports:
-      - 8088:8080
+      - ${SAPRK_WEBUI_EXTERNAL_PORT}:8080
     networks:
       - spark_net
 
@@ -16,8 +16,8 @@ services:
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark:7077
-      - SPARK_WORKER_MEMORY=1G
-      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=${SPARK_WORKER_MEMORY}
+      - SPARK_WORKER_CORES=${SPARK_WORKER_CORES}
     networks:
       - spark_net
       - hdfs
@@ -55,18 +55,13 @@ services:
     hostname: mongo
     image: bitnami/mongodb:6.0.3
     environment:
-      - MONGODB_ROOT_USER=root
-      - MONGODB_ROOT_PASSWORD=kavo
-      - MONGODB_DATABASE=traffic
+      - MONGODB_ROOT_USER=${MONGODB_ROOT_USER}
+      - MONGODB_ROOT_PASSWORD=${MONGODB_ROOT_PASSWORD}
+      - MONGODB_DATABASE=${MONGODB_DATABASE}
     ports:
-      - 27017:27017
+      - ${MONGODB_EXTERNAL_PORT}:27017
     networks:
       - mongo_net
-    # healthcheck:
-    #   test: [ "CMD", "mongo", "--eval", "'db.runCommand(\"ping\").ok'", "ping", "root:kavo@mongo:27017/test", "--quiet"]
-    #   interval: 300s
-    #   timeout: 30s
-    #   retries: 5
 
   hdfs-namenode:
     image: gradiant/hdfs:3.2.2
@@ -77,8 +72,8 @@ services:
     command:
       - namenode
     ports:
-      - 8020:8020
-      - 9870:9870
+      - ${HDFS_EXTERNAL_PORT}:8020
+      - ${HDFS_WEBUI_EXTERNAL_PORT}:9870
     networks:
       - hdfs
 
@@ -102,7 +97,7 @@ services:
       - REDIS_PORT=6379
       - RABBITMQ_HOST=rabbitmq
       - CRAWLER_TYPE=traffic_events
-      - TRAFFIC_URL=https://2gis.ru/moscow?m=37.62017%2C55.755012%2F12&traffic
+      - TRAFFIC_URL=${TRAFFIC_MSC_URL}
       - CITY_NAME=msc
     build:
       context: ./crawler/
@@ -123,7 +118,7 @@ services:
       - REDIS_PORT=6379
       - RABBITMQ_HOST=rabbitmq
       - CRAWLER_TYPE=weather_forecast
-      - WFORECAST_URL=https://yandex.ru/pogoda/moscow
+      - WFORECAST_URL=${WFORECAST_MSC_URL}
       - CITY_NAME=msc
     build:
       context: ./crawler/
@@ -144,7 +139,7 @@ services:
       - REDIS_PORT=6379
       - RABBITMQ_HOST=rabbitmq
       - CRAWLER_TYPE=traffic_events
-      - TRAFFIC_URL=https://2gis.ru/spb?m=30.40821%2C59.953673%2F10.94&traffic
+      - TRAFFIC_URL=${TRAFFIC_SPB_URL}
       - CITY_NAME=spb
     build:
       context: ./crawler/
@@ -165,7 +160,7 @@ services:
       - REDIS_PORT=6379
       - RABBITMQ_HOST=rabbitmq
       - CRAWLER_TYPE=weather_forecast
-      - WFORECAST_URL=https://yandex.ru/pogoda/saint-petersburg
+      - WFORECAST_URL=${WFORECAST_SPB_URL}
       - CITY_NAME=spb
     build:
       context: ./crawler/
@@ -183,6 +178,8 @@ services:
       - ./scheduler/.env
     environment:
       - RABBITMQ_HOST=rabbitmq
+      - PROCESSING_SCHEDULER_EXCHANGE_NAME=${PROCESSING_SCHEDULER_EXCHANGE_NAME}
+      - CRAWLING_SCHEDULER_EXCHANGE_NAME=${CRAWLING_SCHEDULER_EXCHANGE_NAME}
     build:
       context: ./scheduler/
       dockerfile: Dockerfile
@@ -204,7 +201,7 @@ services:
       - HDFS_URL=hdfs://hdfs-namenode:8020
       - HDFS_BLOCK_SIZE=${HDFS_BLOCK_SIZE}
       - TRAFFIC_DATA_SAVING_PATH=processed/data-traffic.csv
-      - TRAFFIC_COUNT_DATA_SAVING_PATH=processed/data-traffic-count.csv
+      - TRAFFIC_COUNT_DATA_SAVING_PATH=${TRAFFIC_COUNT_DATA_SAVING_PATH}
     restart: on-failure
     networks:
       - spark_net
@@ -216,15 +213,13 @@ services:
     build:
       context: ./model/
       dockerfile: Dockerfile
-    # volumes:
-    #   - ./model/src:/app:ro
     environment:
       - RABBITMQ_HOST=rabbitmq
       - TRAINING_SCHEDULER_EXCHANGE_NAME=training_schedule
       - SPARK_SUBNET=${SPARK_SUBNET}
       - HDFS_URL=hdfs://hdfs-namenode:8020
       - HDFS_BLOCK_SIZE=${HDFS_BLOCK_SIZE}
-      - TRAFFIC_COUNT_DATA_SAVING_PATH=processed/data-traffic-count.csv
+      - TRAFFIC_COUNT_DATA_SAVING_PATH=${TRAFFIC_COUNT_DATA_SAVING_PATH}
       - TRAFFIC_BEST_MODEL_SAVING_PATH=weights/best_weights
     restart: on-failure
     networks:
@@ -236,8 +231,6 @@ services:
     build:
       context: ./inference/
       dockerfile: Dockerfile
-    # volumes:
-    #   - ./inference/src:/app:ro
     env_file:
       - ./crawler/.env
     environment:
@@ -259,6 +252,31 @@ services:
       - rabbitmq_net
       - hdfs
       - mongo_net
+    
+  web-app-backend:
+    build:
+      context: ./web-app-back/
+      dockerfile: Dockerfile
+    environment:
+      - MONGO_HOST=mongo
+      - MONGO_USERNAME=${MONGODB_ROOT_USER}
+      - MONGO_PASSWORD=${MONGODB_ROOT_PASSWORD}
+      - DB_NAME=${MONGODB_DATABASE}
+      - DB_COLLECTION=predictions
+    restart: on-failure
+    ports:
+      - ${BACKEND_EXTERNAL_PORT}:8080
+    networks:
+      - mongo_net
+      
+  web-app-frontend:
+    build:
+      context: ./web-app-front/
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: ${BACKEND_EXTERNAL_HOST}:${BACKEND_EXTERNAL_PORT}
+    ports:
+      - 8282:80
 
 networks:
   spark_net:
