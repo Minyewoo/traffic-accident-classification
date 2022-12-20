@@ -10,6 +10,9 @@ class SchedulerConfig:
             'PROCESSING_SCHEDULER_EXCHANGE_NAME', 'processing_schedule')
         self.training_scheduler_exchange_name = getenv(
             'TRAINING_SCHEDULER_EXCHANGE_NAME', 'training_schedule')
+        self.inference_scheduler_exchange_name = getenv(
+            'INFERENCE_SCHEDULER_EXCHANGE_NAME', 'inference_schedule')
         self.crawling_await_seconds = getenv('CRAWLING_AWAIT_SECONDS', '900')
         self.processing_await_seconds = getenv('PROCESSING_AWAIT_SECONDS', '3600')
         self.training_await_seconds = getenv('TRAINING_AWAIT_SECONDS', '3600')
+        self.inference_await_seconds = getenv('INFERENCE_AWAIT_SECONDS', '3600')

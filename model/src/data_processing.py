@@ -28,10 +28,10 @@ def load_data(spark_session, hdfs_url, traffic_count_data_saving_path):
 def prepare_for_training(df, train_ratio=0.8):
     processing_pipeline = Pipeline(
         stages=[
-            StringIndexer(inputCol = 'city_name', outputCol = 'city_index'),
-            StringIndexer(inputCol = 'weekday', outputCol = 'weekday_index'),
-            StringIndexer(inputCol = 'weather_type', outputCol = 'weather_type_index'),
-            StringIndexer(inputCol = 'wind_direction', outputCol = 'wind_direction_index'),
+            StringIndexer(inputCol = 'city_name', outputCol = 'city_index', handleInvalid='skip'),
+            StringIndexer(inputCol = 'weekday', outputCol = 'weekday_index', handleInvalid='skip'),
+            StringIndexer(inputCol = 'weather_type', outputCol = 'weather_type_index', handleInvalid='skip'),
+            StringIndexer(inputCol = 'wind_direction', outputCol = 'wind_direction_index', handleInvalid='skip'),
             VectorAssembler(
                 inputCols=['city_index', 'humidity', 'pressure', 'temperature', 'wind_speed', 'hour', 'weekday_index', 'month', 'weather_type_index', 'wind_direction_index'],
                 outputCol='features'

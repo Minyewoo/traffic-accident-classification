@@ -48,6 +48,10 @@ if __name__ == '__main__':
         .every(int(config.training_await_seconds)).seconds \
         .do(lambda: schedule_job(config.training_scheduler_exchange_name))
 
+    schedule \
+        .every(int(config.inference_await_seconds)).seconds \
+        .do(lambda: schedule_job(config.inference_scheduler_exchange_name))
+
     while 1:
         n = schedule.idle_seconds()
         if n is None:

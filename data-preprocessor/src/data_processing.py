@@ -132,6 +132,7 @@ def get_traffic_count_data(traffic_events_df, weather_forecast_df):
                 F.first(F.col('wind_direction')).alias('wind_direction'),
                 F.first(F.col('wind_speed')).alias('wind_speed'),
             ) \
-            .drop(weather_forecast_df.scheduler_id)
+            .drop(weather_forecast_df.scheduler_id) \
+            .na.fill(value=0, subset=['crashes'])
 
     return traffic_count_df

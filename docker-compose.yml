@@ -51,6 +51,23 @@ services:
       timeout: 30s
       retries: 5
 
+  mongo:
+    hostname: mongo
+    image: bitnami/mongodb:6.0.3
+    environment:
+      - MONGODB_ROOT_USER=root
+      - MONGODB_ROOT_PASSWORD=kavo
+      - MONGODB_DATABASE=traffic
+    ports:
+      - 27017:27017
+    networks:
+      - mongo_net
+    # healthcheck:
+    #   test: [ "CMD", "mongo", "--eval", "'db.runCommand(\"ping\").ok'", "ping", "root:kavo@mongo:27017/test", "--quiet"]
+    #   interval: 300s
+    #   timeout: 30s
+    #   retries: 5
+
   hdfs-namenode:
     image: gradiant/hdfs:3.2.2
     volumes:
@@ -199,9 +216,10 @@ services:
     build:
       context: ./model/
       dockerfile: Dockerfile
-    volumes:
-      - ./model/src:/app:ro
+    # volumes:
+    #   - ./model/src:/app:ro
     environment:
+      - RABBITMQ_HOST=rabbitmq
       - TRAINING_SCHEDULER_EXCHANGE_NAME=training_schedule
       - SPARK_SUBNET=${SPARK_SUBNET}
       - HDFS_URL=hdfs://hdfs-namenode:8020
@@ -212,8 +230,35 @@ services:
     networks:
       - spark_net
       - rabbitmq_net
-      - redis_net
       - hdfs
+
+  inference:
+    build:
+      context: ./inference/
+      dockerfile: Dockerfile
+    # volumes:
+    #   - ./inference/src:/app:ro
+    env_file:
+      - ./crawler/.env
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - INFERENCE_SCHEDULER_EXCHANGE_NAME=inference_schedule
+      - SPARK_SUBNET=${SPARK_SUBNET}
+      - HDFS_URL=hdfs://hdfs-namenode:8020
+      - HDFS_BLOCK_SIZE=${HDFS_BLOCK_SIZE}
+      - TRAFFIC_BEST_MODEL_SAVING_PATH=weights/best_weights
+      - WFORECAST_URLS={"msc":"https://yandex.ru/pogoda/moscow","spb":"https://yandex.ru/pogoda/saint-petersburg"}
+      - MONGODB_HOST=mongo
+      - MONGODB_PORT=27017
+      - MONGODB_USERNAME=root
+      - MONGODB_PASSWORD=kavo
+      - MONGODB_DATABASE=traffic
+    restart: on-failure
+    networks:
+      - spark_net
+      - rabbitmq_net
+      - hdfs
+      - mongo_net
 
 networks:
   spark_net:
@@ -230,4 +275,7 @@ networks:
     driver: bridge
 
   hdfs:
+    driver: bridge
+  
+  mongo_net:
     driver: bridge

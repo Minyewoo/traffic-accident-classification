@@ -55,7 +55,7 @@ def training_job():
     spark_conf.setAll(
         [
             ('spark.master', config.spark_master_url),
-            ('spark.app.name', 'model-testing'),
+            ('spark.app.name', 'model-training'),
             ('spark.submit.deployMode', 'client'),
             ('spark.driver.host', config.spark_driver_host),
             ('dfs.block.size', config.hdfs_block_size),
