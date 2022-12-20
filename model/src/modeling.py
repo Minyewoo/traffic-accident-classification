@@ -60,6 +60,7 @@ def training_job():
             ('spark.driver.host', config.spark_driver_host),
             ('dfs.block.size', config.hdfs_block_size),
             ('spark.sql.sources.partitionOverwriteMode', 'dynamic'),
+            ('spark.ui.showConsoleProgress', 'false'),
         ]
     )
     spark_session = SparkSession.builder \

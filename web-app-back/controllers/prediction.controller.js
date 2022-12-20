@@ -12,6 +12,8 @@ async function getPredictions(req, res) {
             $gte: yesterday,
             $lt: today,
         },
+    }).sort({
+        endDate: -1,
     });
 
     if (!data) {
@@ -20,8 +22,6 @@ async function getPredictions(req, res) {
 
     res.json({
         predictions: data,
-        today: today,
-        yesterday: yesterday,
     });
 }
 

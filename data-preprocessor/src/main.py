@@ -25,7 +25,10 @@ from data_processing import (
 
 config = Config()
 
-pika_parameters = pika.ConnectionParameters(host=config.rabbitmq_host)
+pika_parameters = pika.ConnectionParameters(
+    host=config.rabbitmq_host,
+    heartbeat=1800,
+)
 pika_connection = pika.BlockingConnection(parameters=pika_parameters)
 pika_channel = pika_connection.channel()
 
@@ -50,6 +53,7 @@ def start_spark_session(app_name):
             ('spark.driver.host', config.spark_driver_host),
             ('dfs.block.size', config.hdfs_block_size),
             ('spark.sql.sources.partitionOverwriteMode', 'dynamic'),
+            ('spark.ui.showConsoleProgress', 'false'),
         ]
     )
     spark_session = SparkSession.builder \

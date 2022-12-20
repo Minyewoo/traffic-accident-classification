@@ -21,7 +21,6 @@ const handleUnknownError = (err, req, res) => {
         error: {
             status: 500,
             message: 'Internal server error',
-            debugMessage: err.message,
         },
     });
 };
