@@ -1,0 +1,19 @@
+@import './spacer-helpers';
+@import './variables';
+
+html {
+    box-sizing: border-box;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+}
+
+*,
+*::after,
+*::before {
+    box-sizing: inherit;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+}

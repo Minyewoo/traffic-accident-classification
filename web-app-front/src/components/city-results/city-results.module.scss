@@ -1,0 +1,30 @@
+.results {
+    list-style: none;
+}
+
+.result {
+    padding: 4px 8px;
+    border-radius: 4px;
+    background-color: var(--color-light-grey);
+
+    &:not(:last-child) {
+        margin-bottom: 16px;
+    }
+}
+
+.city {
+    font-weight: 500;
+    font-size: var(--font-size-base);
+}
+
+.date .crashes {
+    font-size: var(--font-size-sm);
+}
+
+.search {
+    width: 100%;
+    margin: 8px 0;
+    padding: 0 8px;
+    font-size: var(--font-size-base);
+    border: 1px solid black;
+}
