@@ -1,5 +1,6 @@
 import logging
 import json
+import time
 import sys
 
 import pyspark
@@ -15,9 +16,12 @@ from data_etl_utils import (
 from data_processing import (
     process_traffic_events,
     process_weather_forecast,
-    join_traffic_and_wheater_data,
+    get_joined_traffic_and_wheater_data,
+    get_traffic_count_data,
 )
 
+# while True:
+#     pass
 
 config = Config()
 
@@ -93,17 +97,21 @@ def message_sorter(message, out_dict):
     return message
 
 def weather_forecast_accumulator(record, out_list):
+    weather_data = record['data']
+    weather_data['scheduler_id'] = record['scheduler_id']
     out_list.append(record['data'])
 
     return record
 
 def traffic_events_accumulator(record, out_list, redis_client):
     events = record['data']['events']
+    scheduler_id = record['scheduler_id']
     city_name = record['data']['city_name']
 
     for event in events:
         if redis_client.get(event['id']) is None:
             event['city_name'] = city_name
+            event['scheduler_id'] = scheduler_id
             out_list.append(event)
             redis_client.set(event['id'], 'passed')
 
@@ -114,20 +122,36 @@ def process_crawled_data(data, spark_session):
         data=data['traffic_events'],
         spark_session=spark_session,
     )
+    traffic_events_df.show(truncate=0, n=100)
 
     weather_forecast_df = process_weather_forecast(
         data=data['weather_forecast'],
         spark_session=spark_session,
     )
+    weather_forecast_df.show(truncate=0)
 
-    processed_data = join_traffic_and_wheater_data(
+    traffic_event_data = get_joined_traffic_and_wheater_data(
         traffic_events_df=traffic_events_df,
-        weather_forecast_df=weather_forecast_df
+        weather_forecast_df=weather_forecast_df,
     )
+    traffic_event_data.show()
+
+    traffic_count_data  = get_traffic_count_data(
+        traffic_events_df=traffic_events_df,
+        weather_forecast_df=weather_forecast_df,
+    )
+    traffic_count_data.show()
+
+    processed_data = {
+        'traffic_event_data': traffic_event_data,
+        'traffic_count_data': traffic_count_data,
+    }
 
     return processed_data
 
 def data_processing_callback(ch, method, properties, body):
+    time.sleep(30)
+
     spark_session = start_spark_session(body)
 
     crawled_data = extract_crawled_data(
@@ -139,9 +163,14 @@ def data_processing_callback(ch, method, properties, body):
     processed_data = process_crawled_data(data=crawled_data, spark_session=spark_session)
 
     save_data_to_hdfs(
-        data=processed_data,
+        data=processed_data['traffic_event_data'],
         hdfs_url=config.hdfs_url,
-        path=config.data_saving_path,
+        path=config.traffic_data_saving_path,
+    )
+    save_data_to_hdfs(
+        data=processed_data['traffic_count_data'],
+        hdfs_url=config.hdfs_url,
+        path=config.traffic_count_data_saving_path,
     )
 
     spark_session.stop()

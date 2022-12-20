@@ -24,7 +24,7 @@ def save_to_redis(id, crawler_type, crawler_data):
         'data': crawler_data,
     }
 
-    data_id = f'{crawler_type}:{id}'
+    data_id = f'{crawler_type}:{config.city_name}:{id}'
     redis_client.json().set(data_id, Path.root_path(), persisting_data)
 
     redis_client.close()

@@ -8,16 +8,13 @@ class Config:
         self.redis_port = getenv('REDIS_PORT', '6379')
 
         self.rabbitmq_host = getenv('RABBITMQ_HOST', 'rabbitmq')
-        self.crawled_queue_name = getenv('CRAWLED_QUEUE_NAME', 'crawled')
-        self.processing_scheduler_exchange_name = getenv(
-            'PROCESSING_SCHEDULER_EXCHANGE_NAME',
-            'processing_schedule'
-        )
 
         self.hdfs_url = getenv('HDFS_URL', 'hdfs://hdfs-namenode:8020')
-        self.traffic_data_saving_path = getenv('TRAFFIC_DATA_SAVING_PATH', 'processed/data-traffic.csv')
         self.traffic_count_data_saving_path = getenv('TRAFFIC_COUNT_DATA_SAVING_PATH', 'processed/data-traffic-count.csv')
+        self.traffic_best_model_saving_path = getenv('TRAFFIC_BEST_MODEL_SAVING_PATH', 'weights/best_weights')
         self.hdfs_block_size = getenv('HDFS_BLOCK_SIZE', '1048576')
+
+        self.training_scheduler_exchange_name = getenv('TRAINING_SCHEDULER_EXCHANGE_NAME', 'training_schedule')
 
         self.spark_master_url = getenv('SPARK_MASTER_URL', 'spark://spark:7077')
         [ self.spark_driver_host ] = filter(
