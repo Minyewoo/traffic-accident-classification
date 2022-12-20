@@ -20,7 +20,10 @@ if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.CRITICAL)
     config = Config()
     connection = pika.BlockingConnection(
-        pika.ConnectionParameters(config.rabbitmq_host)
+        pika.ConnectionParameters(
+            host=config.rabbitmq_host,
+            heartbeat=1800,
+        )
     )
     channel = connection.channel()
     channel.exchange_declare(

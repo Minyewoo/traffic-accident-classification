@@ -91,7 +91,7 @@ services:
   
   traffic_events_crawler_msc:
     env_file:
-      - ./crawler/.env
+      - ./config/crawler.env
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -112,7 +112,7 @@ services:
 
   weather_forecast_crawler_msc:
     env_file:
-      - ./crawler/.env
+      - ./config/crawler.env
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -133,7 +133,7 @@ services:
 
   traffic_events_crawler_spb:
     env_file:
-      - ./crawler/.env
+      - ./config/crawler.env
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -154,7 +154,7 @@ services:
 
   weather_forecast_crawler_spb:
     env_file:
-      - ./crawler/.env
+      - ./config/crawler.env
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -175,7 +175,7 @@ services:
 
   scheduler:
     env_file:
-      - ./scheduler/.env
+      - ./config/shceduler.env
     environment:
       - RABBITMQ_HOST=rabbitmq
       - PROCESSING_SCHEDULER_EXCHANGE_NAME=${PROCESSING_SCHEDULER_EXCHANGE_NAME}
@@ -232,7 +232,7 @@ services:
       context: ./inference/
       dockerfile: Dockerfile
     env_file:
-      - ./crawler/.env
+      - ./config/crawler.env
     environment:
       - RABBITMQ_HOST=rabbitmq
       - INFERENCE_SCHEDULER_EXCHANGE_NAME=inference_schedule
@@ -243,8 +243,8 @@ services:
       - WFORECAST_URLS={"msc":"https://yandex.ru/pogoda/moscow","spb":"https://yandex.ru/pogoda/saint-petersburg"}
       - MONGODB_HOST=mongo
       - MONGODB_PORT=27017
-      - MONGODB_USERNAME=root
-      - MONGODB_PASSWORD=kavo
+      - MONGODB_USERNAME=${MONGODB_ROOT_USER}
+      - MONGODB_PASSWORD=${MONGODB_ROOT_PASSWORD}
       - MONGODB_DATABASE=traffic
     restart: on-failure
     networks:
@@ -276,7 +276,7 @@ services:
       args:
         REACT_APP_API_URL: ${BACKEND_EXTERNAL_HOST}:${BACKEND_EXTERNAL_PORT}
     ports:
-      - 8282:80
+      - ${FRONTEND_EXTERNAL_PORT}:80
 
 networks:
   spark_net:
