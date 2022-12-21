@@ -240,7 +240,7 @@ services:
       - HDFS_URL=hdfs://hdfs-namenode:8020
       - HDFS_BLOCK_SIZE=${HDFS_BLOCK_SIZE}
       - TRAFFIC_BEST_MODEL_SAVING_PATH=weights/best_weights
-      - WFORECAST_URLS={"msc":"https://yandex.ru/pogoda/moscow","spb":"https://yandex.ru/pogoda/saint-petersburg"}
+      - WFORECAST_URLS={"msc":"${WFORECAST_MSC_URL}","spb":"${WFORECAST_SPB_URL}"}
       - MONGODB_HOST=mongo
       - MONGODB_PORT=27017
       - MONGODB_USERNAME=${MONGODB_ROOT_USER}
