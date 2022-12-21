@@ -49,6 +49,11 @@ def save_to_mongo(config: Config, df):
 
 def predicting_job():
     config = Config()
+
+    model_path = f'{config.hdfs_url}/{config.traffic_best_model_saving_path}'
+    if not saved_model_exists(model_path):
+        return
+
     forecasts = crawl_weather_forecasts(config)
     logging.critical(f'Crawled for prediction:\n{forecasts}')
     spark_conf = pyspark.SparkConf()
