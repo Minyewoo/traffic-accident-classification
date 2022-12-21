@@ -4,7 +4,7 @@ from pyspark.sql import SparkSession, functions as F
 from pyspark.ml.tuning import TrainValidationSplitModel
 from config import Config
 from pymongo import MongoClient
-from datetime import  timedelta
+from datetime import timedelta
 from utils import (
     saved_model_exists,
 )
@@ -14,17 +14,20 @@ from data_processing import (
     process_weather_forecast,
 )
 
+
 def predict_crashes(df, hdfs_url, old_model_path):
     model_path = f'{hdfs_url}/{old_model_path}'
     if not saved_model_exists(model_path):
-        return 0
-    
+        raise FileNotFoundError('File with weights does not exists.')
+
     model = TrainValidationSplitModel.load(model_path)
     return model.transform(df) \
         .withColumn('prediction', F.round(F.col('prediction')).cast('int'))
 
+
 def save_to_mongo(config: Config, df):
-    client = MongoClient(f'mongodb://{config.mongo_user}:{config.mongo_password}@{config.mongo_host}:{config.mongo_port}/')
+    client = MongoClient(
+        f'mongodb://{config.mongo_user}:{config.mongo_password}@{config.mongo_host}:{config.mongo_port}/')
     db = client[config.mongo_traffic_database]
     predictions = db[config.mongo_predictions_collection]
 
@@ -43,6 +46,7 @@ def save_to_mongo(config: Config, df):
 
     client.close()
 
+
 def predicting_job():
     config = Config()
     forecasts = crawl_weather_forecasts(config)
@@ -60,11 +64,12 @@ def predicting_job():
         ]
     )
     spark_session = SparkSession.builder \
-            .config(conf=spark_conf) \
-            .getOrCreate()
+        .config(conf=spark_conf) \
+        .getOrCreate()
     df = process_weather_forecast(forecasts, spark_session)
     df = prepare_for_inference(df)
-    df = predict_crashes(df, config.hdfs_url, config.traffic_best_model_saving_path)
+    df = predict_crashes(df, config.hdfs_url,
+                         config.traffic_best_model_saving_path)
     df.select('city_name', 'prediction').show()
 
     save_to_mongo(config, df)
